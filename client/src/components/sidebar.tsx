@@ -45,6 +45,13 @@ const navItems = [
     badge: "New"
   },
   {
+    title: "AI Setup",
+    href: "/llm-setup",
+    icon: Settings,
+    description: "Configure AI providers",
+    badge: "Setup"
+  },
+  {
     title: "Applications",
     href: "/applications",
     icon: Target,
