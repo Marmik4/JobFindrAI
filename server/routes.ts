@@ -13,6 +13,7 @@ import multer, { type FileFilterCallback } from "multer";
 import type { Request } from "express";
 import * as fs from "fs";
 import * as path from "path";
+import { registerLLMStatusRoutes } from "./routes/llm-status";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -33,6 +34,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register LLM status routes
+  registerLLMStatusRoutes(app);
+
   // Dashboard stats
   app.get("/api/dashboard/stats", async (req, res) => {
     try {

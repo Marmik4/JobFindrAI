@@ -110,43 +110,9 @@ export class OpenAIService {
   }
 
   static async extractResumeSkills(resumeContent: string): Promise<string[]> {
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `Extract all technical skills, programming languages, frameworks, tools, and relevant professional skills from the provided resume. Return a JSON object with a "skills" array containing all identified skills.`
-          },
-          {
-            role: "user",
-            content: `Resume Content:\n${resumeContent}\n\nPlease extract all skills and return as JSON.`
-          }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.3
-      });
-
-      const result = JSON.parse(response.choices[0].message.content!);
-      return result.skills || [];
-    } catch (error) {
-      console.error("Error extracting skills:", error);
-      // Return fallback skills based on common patterns in content
-      const fallbackSkills: string[] = [];
-      const skillPatterns = [
-        /python/i, /javascript/i, /react/i, /node\.?js/i, /java/i, /c\+\+/i,
-        /aws/i, /docker/i, /kubernetes/i, /sql/i, /mongodb/i, /postgresql/i
-      ];
-      
-      skillPatterns.forEach(pattern => {
-        if (pattern.test(resumeContent)) {
-          const match = resumeContent.match(pattern);
-          if (match) fallbackSkills.push(match[0]);
-        }
-      });
-      
-      return fallbackSkills.length > 0 ? fallbackSkills : ["Programming", "Software Development"];
-    }
+    // Import LLMService dynamically to avoid circular dependencies
+    const { LLMService } = await import('./llmService');
+    return await LLMService.extractResumeSkills(resumeContent);
   }
 
   static async optimizeResumeForJob(resumeContent: string, job: any): Promise<string> {
@@ -187,35 +153,8 @@ Please optimize this resume for the above job position.`
   }
 
   static async getResumeOptimizationSuggestions(resumeContent: string): Promise<string[]> {
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `Analyze the provided resume and provide specific, actionable suggestions for improvement. Return a JSON object with a "suggestions" array containing 5-7 concrete improvement suggestions.`
-          },
-          {
-            role: "user",
-            content: `Resume Content:\n${resumeContent}\n\nPlease provide optimization suggestions as JSON.`
-          }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.5
-      });
-
-      const result = JSON.parse(response.choices[0].message.content!);
-      return result.suggestions || [];
-    } catch (error) {
-      console.error("Error getting suggestions:", error);
-      return [
-        "Add more quantifiable achievements with numbers and percentages",
-        "Include relevant technical skills for your target industry",
-        "Highlight leadership and collaboration experience",
-        "Use action verbs to start bullet points",
-        "Customize resume content for each job application"
-      ];
-    }
+    const { LLMService } = await import('./llmService');
+    return await LLMService.getResumeOptimizationSuggestions(resumeContent);
   }
 
   static async analyzeJobDescription(jobDescription: string): Promise<{
@@ -264,46 +203,8 @@ Please optimize this resume for the above job position.`
     issues: string[];
     recommendations: string[];
   }> {
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `Analyze the resume for ATS (Applicant Tracking System) compatibility. Return a JSON object with:
-            - score: number from 0-100 indicating ATS compatibility
-            - issues: array of identified ATS problems
-            - recommendations: array of specific suggestions to improve ATS compatibility`
-          },
-          {
-            role: "user",
-            content: `Resume Content:\n${resumeContent}\n\nPlease analyze ATS compatibility and return as JSON.`
-          }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.3
-      });
-
-      const result = JSON.parse(response.choices[0].message.content!);
-      return {
-        score: result.score || 75,
-        issues: result.issues || [],
-        recommendations: result.recommendations || []
-      };
-    } catch (error) {
-      console.error("Error checking ATS compatibility:", error);
-      return {
-        score: 75,
-        issues: ["Unable to analyze ATS compatibility at this time"],
-        recommendations: [
-          "Use standard section headings (Experience, Education, Skills)",
-          "Avoid images, graphics, and complex formatting",
-          "Use common fonts like Arial or Calibri",
-          "Include relevant keywords from job descriptions",
-          "Save as .pdf or .docx format"
-        ]
-      };
-    }
+    const { LLMService } = await import('./llmService');
+    return await LLMService.checkATSCompatibility(resumeContent);
   }
 
   static async performKeywordAnalysis(resumeContent: string, jobDescription: string): Promise<{
@@ -312,47 +213,7 @@ Please optimize this resume for the above job position.`
     matchScore: number;
     suggestions: string[];
   }> {
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `Compare the resume against the job description for keyword matching. Return a JSON object with:
-            - matchedKeywords: array of keywords found in both
-            - missingKeywords: array of important keywords missing from resume
-            - matchScore: percentage match score (0-100)
-            - suggestions: array of specific recommendations to improve keyword matching`
-          },
-          {
-            role: "user",
-            content: `Job Description:\n${jobDescription}\n\nResume Content:\n${resumeContent}\n\nPlease analyze keyword matching and return as JSON.`
-          }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.3
-      });
-
-      const result = JSON.parse(response.choices[0].message.content!);
-      return {
-        matchedKeywords: result.matchedKeywords || [],
-        missingKeywords: result.missingKeywords || [],
-        matchScore: result.matchScore || 0,
-        suggestions: result.suggestions || []
-      };
-    } catch (error) {
-      console.error("Error performing keyword analysis:", error);
-      return {
-        matchedKeywords: ["Programming", "Software Development"],
-        missingKeywords: ["Unable to analyze keywords at this time"],
-        matchScore: 50,
-        suggestions: [
-          "Include specific technical skills mentioned in the job description",
-          "Use industry-standard terminology",
-          "Match the job title keywords in your resume",
-          "Include relevant certifications and tools"
-        ]
-      };
-    }
+    const { LLMService } = await import('./llmService');
+    return await LLMService.performKeywordAnalysis(resumeContent, jobDescription);
   }
 }
