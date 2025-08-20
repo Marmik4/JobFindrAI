@@ -185,6 +185,26 @@ export default function ResumeManager() {
     },
   });
 
+  const checkATSCompatibility = useMutation({
+    mutationFn: (resumeId: string) => 
+      fetch(`/api/resumes/${resumeId}/ats-check`, { 
+        credentials: 'include' 
+      }).then(res => res.json()),
+    onSuccess: (data) => {
+      toast({
+        title: "ATS Compatibility Check Complete",
+        description: `Score: ${data.score}/100. Found ${data.issues?.length || 0} issues and ${data.recommendations?.length || 0} recommendations.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ATS Check Failed",
+        description: "Failed to check ATS compatibility.",
+        variant: "destructive",
+      });
+    },
+  });
+
 
 
   return (

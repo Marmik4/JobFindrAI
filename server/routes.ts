@@ -385,6 +385,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check ATS compatibility
+  app.get("/api/resumes/:id/ats-check", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resume = await storage.getResume(id);
+      
+      if (!resume) {
+        return res.status(404).json({ error: "Resume not found" });
+      }
+
+      const atsAnalysis = await OpenAIService.checkATSCompatibility(resume.content);
+      
+      res.json({
+        resumeId: id,
+        ...atsAnalysis
+      });
+    } catch (error) {
+      console.error("Error checking ATS compatibility:", error);
+      res.status(500).json({ error: "Failed to check ATS compatibility" });
+    }
+  });
+
+  // Keyword matching analysis
+  app.post("/api/resumes/:id/keyword-analysis", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { jobDescription } = req.body;
+      
+      if (!jobDescription) {
+        return res.status(400).json({ error: "Job description is required" });
+      }
+
+      const resume = await storage.getResume(id);
+      
+      if (!resume) {
+        return res.status(404).json({ error: "Resume not found" });
+      }
+
+      const keywordAnalysis = await OpenAIService.performKeywordAnalysis(resume.content, jobDescription);
+      
+      res.json({
+        resumeId: id,
+        ...keywordAnalysis
+      });
+    } catch (error) {
+      console.error("Error performing keyword analysis:", error);
+      res.status(500).json({ error: "Failed to perform keyword analysis" });
+    }
+  });
+
   // Delete resume
   app.delete("/api/resumes/:id", async (req, res) => {
     try {
