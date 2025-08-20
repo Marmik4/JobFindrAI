@@ -88,28 +88,65 @@ export class JobScraperService {
     try {
       for (const keyword of keywords) {
         const location = locations.length > 0 ? locations[0] : '';
-        // Note: LinkedIn requires authentication for most scraping, this is a basic example
-        const searchUrl = `https://www.linkedin.com/jobs/search?keywords=${encodeURIComponent(keyword)}&location=${encodeURIComponent(location)}&trk=public_jobs_jobs-search-bar_search-submit`;
+        const searchUrl = `https://www.linkedin.com/jobs/search?keywords=${encodeURIComponent(keyword)}&location=${encodeURIComponent(location)}&f_TPR=r86400&f_JT=F&sortBy=DD`;
         
-        console.log(`Attempting to scrape LinkedIn for: ${keyword}`);
+        console.log(`Scraping LinkedIn for: ${keyword} in ${location || 'any location'}`);
         
-        // LinkedIn has strict anti-scraping measures, so this is more of a placeholder
-        // In a real implementation, you'd need to use LinkedIn's API or more sophisticated methods
-        console.warn('LinkedIn scraping requires special handling due to authentication requirements');
-        
-        // For now, we'll generate some sample data structure
-        jobs.push({
-          title: `${keyword} Developer`,
-          company: 'LinkedIn Sample Company',
-          location: location || 'Remote',
-          description: `Sample job description for ${keyword} position`,
-          url: searchUrl,
-          externalId: `linkedin-sample-${Date.now()}`,
-          jobBoard: 'LinkedIn'
-        });
+        try {
+          const response = await fetch(searchUrl, {
+            headers: {
+              ...this.HEADERS,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Cache-Control': 'no-cache'
+            },
+          });
+
+          if (!response.ok) {
+            console.error(`LinkedIn scraping failed: ${response.status}`);
+            continue;
+          }
+
+          const html = await response.text();
+          const $ = cheerio.load(html);
+
+          // LinkedIn public job search results
+          $('.base-card').each((index, element) => {
+            if (jobs.length >= limit) return false;
+
+            try {
+              const $job = $(element);
+              const title = $job.find('.base-search-card__title').text().trim();
+              const company = $job.find('.base-search-card__subtitle').text().trim();
+              const location = $job.find('.job-search-card__location').text().trim();
+              const summary = $job.find('.job-search-card__snippet').text().trim();
+              const jobUrl = $job.find('.base-card__full-link').attr('href') || searchUrl;
+              const jobId = jobUrl.split('/').pop() || `linkedin-${Date.now()}-${index}`;
+
+              if (title && company) {
+                jobs.push({
+                  title,
+                  company,
+                  location: location || undefined,
+                  description: summary || `${keyword} position at ${company}`,
+                  url: jobUrl,
+                  externalId: jobId,
+                  jobBoard: 'LinkedIn'
+                });
+              }
+            } catch (error) {
+              console.error('Error parsing LinkedIn job:', error);
+            }
+          });
+
+          // Add delay between requests
+          await this.delay(3000);
+          
+        } catch (error) {
+          console.error(`Error scraping LinkedIn for ${keyword}:`, error);
+        }
       }
     } catch (error) {
-      console.error('Error scraping LinkedIn:', error);
+      console.error('Error in LinkedIn scraping:', error);
     }
 
     return jobs;
@@ -174,37 +211,122 @@ export class JobScraperService {
     return jobs;
   }
 
+  async scrapeStackOverflowJobs(keywords: string[], limit: number = 20): Promise<ScrapedJob[]> {
+    const jobs: ScrapedJob[] = [];
+    
+    try {
+      const searchUrl = 'https://stackoverflow.com/jobs/remote-developer-jobs';
+      
+      console.log('Scraping Stack Overflow Jobs');
+      
+      const response = await fetch(searchUrl, {
+        headers: this.HEADERS,
+      });
+
+      if (!response.ok) {
+        console.error(`Stack Overflow scraping failed: ${response.status}`);
+        return jobs;
+      }
+
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      $('.listResults .result').each((index, element) => {
+        if (jobs.length >= limit) return false;
+
+        try {
+          const $job = $(element);
+          const title = $job.find('.job-link').text().trim();
+          const company = $job.find('.fc-black-700').text().trim();
+          const tags = $job.find('.post-tag').map((i, el) => $(el).text().trim()).get();
+          const jobUrl = 'https://stackoverflow.com' + $job.find('.job-link').attr('href');
+          const jobId = `stackoverflow-${Date.now()}-${index}`;
+
+          // Check if job matches keywords
+          const matchesKeyword = keywords.some(keyword => 
+            title.toLowerCase().includes(keyword.toLowerCase()) ||
+            tags.some(tag => tag.toLowerCase().includes(keyword.toLowerCase()))
+          );
+
+          if (title && company && matchesKeyword) {
+            jobs.push({
+              title,
+              company,
+              location: 'Remote',
+              description: `Technologies: ${tags.join(', ')}`,
+              url: jobUrl,
+              externalId: jobId,
+              jobBoard: 'Stack Overflow'
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing Stack Overflow job:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error scraping Stack Overflow:', error);
+    }
+
+    return jobs;
+  }
+
   async scrapeAllJobBoards(keywords: string[], locations: string[] = [], limit: number = 50): Promise<ScrapedJob[]> {
     const allJobs: ScrapedJob[] = [];
     
-    console.log(`Starting job scraping for keywords: ${keywords.join(', ')}`);
+    console.log(`Starting comprehensive job search for: ${keywords.join(', ')}`);
     
     try {
-      // Scrape from different job boards
-      const [indeedJobs, remoteOkJobs, linkedinJobs] = await Promise.allSettled([
-        this.scrapeIndeedJobs(keywords, locations, Math.floor(limit * 0.5)),
+      // Scrape from multiple job boards in parallel
+      const [indeedJobs, remoteOkJobs, linkedinJobs, stackoverflowJobs] = await Promise.allSettled([
+        this.scrapeIndeedJobs(keywords, locations, Math.floor(limit * 0.4)),
         this.scrapeRemoteOkJobs(keywords, Math.floor(limit * 0.3)),
-        this.scrapeLinkedInJobs(keywords, locations, Math.floor(limit * 0.2))
+        this.scrapeLinkedInJobs(keywords, locations, Math.floor(limit * 0.2)),
+        this.scrapeStackOverflowJobs(keywords, Math.floor(limit * 0.1))
       ]);
 
+      // Collect all successful results
       if (indeedJobs.status === 'fulfilled') {
+        console.log(`✓ Indeed: ${indeedJobs.value.length} jobs`);
         allJobs.push(...indeedJobs.value);
+      } else {
+        console.log(`✗ Indeed scraping failed:`, indeedJobs.reason);
       }
       
       if (remoteOkJobs.status === 'fulfilled') {
+        console.log(`✓ RemoteOK: ${remoteOkJobs.value.length} jobs`);
         allJobs.push(...remoteOkJobs.value);
+      } else {
+        console.log(`✗ RemoteOK scraping failed:`, remoteOkJobs.reason);
       }
       
       if (linkedinJobs.status === 'fulfilled') {
+        console.log(`✓ LinkedIn: ${linkedinJobs.value.length} jobs`);
         allJobs.push(...linkedinJobs.value);
+      } else {
+        console.log(`✗ LinkedIn scraping failed:`, linkedinJobs.reason);
+      }
+      
+      if (stackoverflowJobs.status === 'fulfilled') {
+        console.log(`✓ Stack Overflow: ${stackoverflowJobs.value.length} jobs`);
+        allJobs.push(...stackoverflowJobs.value);
+      } else {
+        console.log(`✗ Stack Overflow scraping failed:`, stackoverflowJobs.reason);
       }
 
     } catch (error) {
-      console.error('Error in scrapeAllJobBoards:', error);
+      console.error('Critical error in job board scraping:', error);
     }
 
-    console.log(`Successfully scraped ${allJobs.length} jobs`);
-    return allJobs.slice(0, limit);
+    // Remove duplicates based on title + company
+    const uniqueJobs = allJobs.filter((job, index, self) => 
+      index === self.findIndex(j => 
+        j.title.toLowerCase() === job.title.toLowerCase() && 
+        j.company.toLowerCase() === job.company.toLowerCase()
+      )
+    );
+
+    console.log(`Job scraping completed: ${uniqueJobs.length} unique jobs found`);
+    return uniqueJobs.slice(0, limit);
   }
 
   private async delay(ms: number): Promise<void> {

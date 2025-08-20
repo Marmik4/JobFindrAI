@@ -52,6 +52,11 @@ interface JobSearchConfig {
   isActive: boolean;
 }
 
+interface AutomationStatus {
+  isRunning: boolean;
+  nextRunTime?: string;
+}
+
 export default function JobSearch() {
   const [keywordInput, setKeywordInput] = useState("");
   const [locationInput, setLocationInput] = useState("");
@@ -64,6 +69,11 @@ export default function JobSearch() {
 
   const { data: jobs, isLoading: jobsLoading } = useQuery<Job[]>({
     queryKey: ['/api/jobs'],
+  });
+
+  const { data: automationStatus, isLoading: statusLoading } = useQuery<AutomationStatus>({
+    queryKey: ['/api/job-search/automation-status'],
+    refetchInterval: 5000, // Check status every 5 seconds
   });
 
   const form = useForm<JobSearchFormData>({
@@ -107,6 +117,60 @@ export default function JobSearch() {
     onError: (error) => {
       toast({
         title: "Failed to save configuration",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const manualSearchMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/job-search/manual", {}),
+    onSuccess: (data: any) => {
+      toast({
+        title: "Job Search Completed",
+        description: `Found ${data.jobsFound} new jobs`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Job Search Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const startAutomationMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/job-search/start-automation", {}),
+    onSuccess: () => {
+      toast({
+        title: "Automation Started",
+        description: "Automatic job search is now running every 6 hours",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/job-search/automation-status'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Start Automation",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const stopAutomationMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/job-search/stop-automation", {}),
+    onSuccess: () => {
+      toast({
+        title: "Automation Stopped",
+        description: "Automatic job search has been disabled",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/job-search/automation-status'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Stop Automation",
         description: error.message,
         variant: "destructive",
       });
@@ -171,7 +235,7 @@ export default function JobSearch() {
         <main className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Configuration Panel */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6">
               <Card className="shadow-material">
                 <CardHeader>
                   <h3 className="text-lg font-medium text-gray-900">Search Configuration</h3>
@@ -380,6 +444,69 @@ export default function JobSearch() {
                       </form>
                     </Form>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* Automation Controls */}
+              <Card className="shadow-material">
+                <CardHeader>
+                  <h3 className="text-lg font-medium text-gray-900">Job Search Automation</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Automation Status */}
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {statusLoading ? "Checking..." : 
+                           (automationStatus?.isRunning ? "🟢 Running" : "⚪ Stopped")}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {automationStatus?.isRunning 
+                            ? "Automatically searching for jobs every 6 hours" 
+                            : "Manual search only"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Manual Search */}
+                    <Button 
+                      onClick={() => manualSearchMutation.mutate()}
+                      disabled={manualSearchMutation.isPending}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      data-testid="manual-search-button"
+                    >
+                      {manualSearchMutation.isPending ? "Searching..." : "Search Now"}
+                    </Button>
+
+                    {/* Automation Controls */}
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={() => startAutomationMutation.mutate()}
+                        disabled={startAutomationMutation.isPending || automationStatus?.isRunning}
+                        className="flex-1 bg-material-blue hover:bg-blue-700"
+                        data-testid="start-automation-button"
+                      >
+                        {startAutomationMutation.isPending ? "Starting..." : "Start Automation"}
+                      </Button>
+                      
+                      <Button
+                        onClick={() => stopAutomationMutation.mutate()}
+                        disabled={stopAutomationMutation.isPending || !automationStatus?.isRunning}
+                        variant="outline"
+                        className="flex-1"
+                        data-testid="stop-automation-button"
+                      >
+                        {stopAutomationMutation.isPending ? "Stopping..." : "Stop"}
+                      </Button>
+                    </div>
+
+                    {automationStatus?.nextRunTime && (
+                      <p className="text-xs text-gray-600 text-center">
+                        Next automated search: {new Date(automationStatus.nextRunTime).toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>

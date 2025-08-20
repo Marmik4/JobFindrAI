@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { OpenAIService } from "./services/openai";
 import { jobScraperService } from "./services/jobScraper";
 import { browserAutomationService, type ApplicationFormData } from "./services/browserAutomation";
+import { scheduledJobSearchService } from "./services/scheduledJobSearch";
 import { insertJobSearchConfigSchema, insertResumeSchema, insertJobApplicationSchema, insertSystemConfigSchema } from "@shared/schema";
 import multer, { type FileFilterCallback } from "multer";
 import type { Request } from "express";
@@ -172,6 +173,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in manual job search:", error);
       res.status(500).json({ error: "Failed to perform job search: " + (error as Error).message });
+    }
+  });
+
+  // Start automatic job search
+  app.post("/api/job-search/start-automation", async (req, res) => {
+    try {
+      await scheduledJobSearchService.startAutomaticJobSearch();
+      res.json({ message: "Automatic job search started", status: "running" });
+    } catch (error) {
+      console.error("Error starting automatic job search:", error);
+      res.status(500).json({ error: "Failed to start automatic job search" });
+    }
+  });
+
+  // Stop automatic job search
+  app.post("/api/job-search/stop-automation", async (req, res) => {
+    try {
+      await scheduledJobSearchService.stopAutomaticJobSearch();
+      res.json({ message: "Automatic job search stopped", status: "stopped" });
+    } catch (error) {
+      console.error("Error stopping automatic job search:", error);
+      res.status(500).json({ error: "Failed to stop automatic job search" });
+    }
+  });
+
+  // Get automation status
+  app.get("/api/job-search/automation-status", async (req, res) => {
+    try {
+      const status = scheduledJobSearchService.getStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting automation status:", error);
+      res.status(500).json({ error: "Failed to get automation status" });
     }
   });
 
