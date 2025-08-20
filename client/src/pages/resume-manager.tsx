@@ -463,11 +463,14 @@ export default function ResumeManager() {
 
       {/* Resume View Dialog */}
       <Dialog open={!!viewingResume} onOpenChange={() => setViewingResume(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="resume-dialog-description">
           <DialogHeader>
             <DialogTitle>
               {viewingResume?.name || "Resume"}
             </DialogTitle>
+            <div id="resume-dialog-description" className="sr-only">
+              View resume details, content preview, and download options
+            </div>
           </DialogHeader>
           <div className="space-y-4">
             {viewingResume && (
@@ -497,11 +500,25 @@ export default function ResumeManager() {
                 )}
 
                 <div>
-                  <Label className="font-medium">Content:</Label>
+                  <Label className="font-medium">Content Preview:</Label>
                   <div className="mt-2 p-4 bg-gray-50 rounded-lg max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-900 font-mono">
-                      {viewingResume.content}
-                    </pre>
+                    {viewingResume.content && viewingResume.content.length > 50 ? (
+                      <div className="text-sm text-gray-900">
+                        <p className="mb-2 font-medium">Resume Summary:</p>
+                        <div className="whitespace-pre-wrap">
+                          {viewingResume.content.substring(0, 500)}
+                          {viewingResume.content.length > 500 && "..."}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <span className="material-icon text-4xl text-gray-400 mb-2 block">description</span>
+                        <p className="text-gray-600">PDF content available for download</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Use the download button to view the full resume
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 

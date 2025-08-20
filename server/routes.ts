@@ -245,8 +245,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      // Read file content (for PDF parsing, you'd use a proper PDF parser)
-      const content = fs.readFileSync(file.path, 'utf-8');
+      // Read file content - for PDFs, this will be binary data
+      let content = "";
+      try {
+        if (file.mimetype === 'application/pdf') {
+          // For PDF files, store a descriptive placeholder since binary content is not readable
+          content = `PDF Resume: ${file.originalname}\nFile Size: ${(file.size / 1024).toFixed(1)} KB\nUploaded: ${new Date().toLocaleDateString()}\n\nThis is a PDF file. Use the download button to view the full content.`;
+        } else {
+          // For text files, read normally
+          content = fs.readFileSync(file.path, 'utf-8');
+        }
+      } catch (readError) {
+        console.warn("Could not read file content:", readError);
+        content = `Resume: ${file.originalname}\nFile Size: ${(file.size / 1024).toFixed(1)} KB\nUploaded: ${new Date().toLocaleDateString()}`;
+      }
       
       // Extract skills using AI
       const skills = await OpenAIService.extractResumeSkills(content);
@@ -370,6 +382,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting optimization suggestions:", error);
       res.status(500).json({ error: "Failed to get optimization suggestions" });
+    }
+  });
+
+  // Delete resume
+  app.delete("/api/resumes/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = "demo-user-id";
+      
+      const resumes = await storage.getResumes(userId);
+      const resume = resumes.find(r => r.id === id);
+      
+      if (!resume) {
+        return res.status(404).json({ error: "Resume not found" });
+      }
+
+      // Delete the file from disk if it exists
+      if (resume.filePath && fs.existsSync(resume.filePath)) {
+        try {
+          fs.unlinkSync(resume.filePath);
+        } catch (fileError) {
+          console.warn("Could not delete file:", fileError);
+          // Continue with database deletion even if file deletion fails
+        }
+      }
+
+      await storage.deleteResume(id);
+      res.json({ success: true, message: "Resume deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting resume:", error);
+      res.status(500).json({ error: "Failed to delete resume" });
     }
   });
 
