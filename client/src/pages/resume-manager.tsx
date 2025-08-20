@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Resume {
   id: string;
@@ -28,6 +29,7 @@ export default function ResumeManager() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [resumeName, setResumeName] = useState("");
   const [isDefaultResume, setIsDefaultResume] = useState(false);
+  const [viewingResume, setViewingResume] = useState<Resume | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -368,6 +370,7 @@ export default function ResumeManager() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => setViewingResume(resume)}
                                 data-testid={`view-resume-${resume.id}`}
                               >
                                 <span className="material-icon text-sm mr-2">visibility</span>
@@ -457,6 +460,76 @@ export default function ResumeManager() {
           </div>
         </main>
       </div>
+
+      {/* Resume View Dialog */}
+      <Dialog open={!!viewingResume} onOpenChange={() => setViewingResume(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {viewingResume?.name || "Resume"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {viewingResume && (
+              <>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <Label className="font-medium">File Name:</Label>
+                    <p className="text-material-gray">{viewingResume.originalFileName}</p>
+                  </div>
+                  <div>
+                    <Label className="font-medium">Uploaded:</Label>
+                    <p className="text-material-gray">{formatDate(viewingResume.createdAt)}</p>
+                  </div>
+                </div>
+                
+                {viewingResume.skills && viewingResume.skills.length > 0 && (
+                  <div>
+                    <Label className="font-medium">Skills:</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {viewingResume.skills.map((skill) => (
+                        <Badge key={skill} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <Label className="font-medium">Content:</Label>
+                  <div className="mt-2 p-4 bg-gray-50 rounded-lg max-h-96 overflow-y-auto">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-900 font-mono">
+                      {viewingResume.content}
+                    </pre>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => downloadResume(viewingResume)}
+                  >
+                    <span className="material-icon mr-2 text-sm">download</span>
+                    Download
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      optimizeResume.mutate(viewingResume.id);
+                      setViewingResume(null);
+                    }}
+                    disabled={optimizeResume.isPending}
+                    className="bg-material-blue hover:bg-blue-700"
+                  >
+                    <span className="material-icon mr-2 text-sm">auto_awesome</span>
+                    Optimize
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

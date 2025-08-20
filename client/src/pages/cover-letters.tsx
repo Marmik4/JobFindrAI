@@ -154,7 +154,7 @@ export default function CoverLetters() {
                       </SelectTrigger>
                       <SelectContent>
                         {jobsLoading ? (
-                          <SelectItem value="" disabled>Loading jobs...</SelectItem>
+                          <SelectItem value="loading" disabled>Loading jobs...</SelectItem>
                         ) : jobs && jobs.length > 0 ? (
                           jobs.map((job) => (
                             <SelectItem key={job.id} value={job.id}>
@@ -162,7 +162,7 @@ export default function CoverLetters() {
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="" disabled>No jobs available</SelectItem>
+                          <SelectItem value="none" disabled>No jobs available</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -178,7 +178,7 @@ export default function CoverLetters() {
                       </SelectTrigger>
                       <SelectContent>
                         {resumesLoading ? (
-                          <SelectItem value="" disabled>Loading resumes...</SelectItem>
+                          <SelectItem value="loading" disabled>Loading resumes...</SelectItem>
                         ) : resumes && resumes.length > 0 ? (
                           resumes.map((resume) => (
                             <SelectItem key={resume.id} value={resume.id}>
@@ -186,7 +186,7 @@ export default function CoverLetters() {
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="" disabled>No resumes available</SelectItem>
+                          <SelectItem value="none" disabled>No resumes available</SelectItem>
                         )}
                       </SelectContent>
                     </Select>

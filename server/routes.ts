@@ -296,7 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set proper headers for file download
       res.setHeader('Content-Disposition', `attachment; filename="${resume.originalFileName}"`);
-      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Type', 'application/pdf');
       
       // Stream the file
       const fileStream = fs.createReadStream(filePath);
