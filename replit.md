@@ -8,6 +8,19 @@ JobBot AI is a comprehensive job application automation platform that streamline
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### August 20, 2025
+- ✅ Completed comprehensive advanced AI job automation system
+- ✅ Implemented intelligent job matching with skill compatibility scoring
+- ✅ Built automated application system with AI-powered cover letter generation
+- ✅ Added adaptive learning system for success pattern analysis
+- ✅ Created mobile-responsive AI Insights dashboard
+- ✅ Fixed accessibility warnings with proper dialog titles and descriptions
+- ✅ Thoroughly tested all button functionality and API endpoints
+- ✅ Confirmed robust fallback mechanisms when OpenAI quota exceeded
+- ✅ Verified cross-device compatibility and responsive design
+
 ## System Architecture
 
 ### Frontend Architecture
