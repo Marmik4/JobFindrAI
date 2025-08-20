@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -69,28 +69,30 @@ export default function JobSearch() {
   const form = useForm<JobSearchFormData>({
     resolver: zodResolver(jobSearchSchema),
     defaultValues: {
-      keywords: config?.keywords || [],
-      locations: config?.locations || [],
-      jobBoards: config?.jobBoards || ['Indeed', 'LinkedIn'],
-      salaryMin: config?.salaryMin,
-      salaryMax: config?.salaryMax,
-      experienceLevel: config?.experienceLevel || 'mid',
-      isActive: config?.isActive ?? true,
+      keywords: [],
+      locations: [],
+      jobBoards: ['Indeed', 'LinkedIn'],
+      salaryMin: undefined,
+      salaryMax: undefined,
+      experienceLevel: 'mid',
+      isActive: true,
     },
   });
 
   // Update form when config loads
-  if (config && !configLoading) {
-    form.reset({
-      keywords: config.keywords || [],
-      locations: config.locations || [],
-      jobBoards: config.jobBoards || ['Indeed', 'LinkedIn'],
-      salaryMin: config.salaryMin,
-      salaryMax: config.salaryMax,
-      experienceLevel: config.experienceLevel || 'mid',
-      isActive: config.isActive ?? true,
-    });
-  }
+  useEffect(() => {
+    if (config && !configLoading) {
+      form.reset({
+        keywords: config.keywords || [],
+        locations: config.locations || [],
+        jobBoards: config.jobBoards || ['Indeed', 'LinkedIn'],
+        salaryMin: config.salaryMin,
+        salaryMax: config.salaryMax,
+        experienceLevel: config.experienceLevel || 'mid',
+        isActive: config.isActive ?? true,
+      });
+    }
+  }, [config, configLoading, form]);
 
   const saveConfigMutation = useMutation({
     mutationFn: (data: JobSearchFormData) => 

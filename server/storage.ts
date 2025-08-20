@@ -76,6 +76,94 @@ export class MemStorage implements IStorage {
     this.coverLetters = new Map();
     this.automationLogs = new Map();
     this.systemConfigs = new Map();
+    
+    // Add sample data for testing
+    this.initializeSampleData();
+  }
+
+  private initializeSampleData() {
+    // Add sample jobs
+    const sampleJobs = [
+      {
+        id: randomUUID(),
+        title: "Senior Python Developer",
+        company: "TechCorp Inc",
+        location: "San Francisco, CA",
+        description: "We are looking for an experienced Python developer to join our growing team. The ideal candidate will have 5+ years of experience with Python, Django, and React.",
+        requirements: "Python, Django, React, AWS, PostgreSQL",
+        salary: "$120,000 - $150,000",
+        url: "https://example.com/jobs/python-dev",
+        jobBoard: "Indeed",
+        externalId: "job-001",
+        isActive: true,
+        discoveredAt: new Date()
+      },
+      {
+        id: randomUUID(),
+        title: "Full Stack JavaScript Developer",
+        company: "StartupXYZ",
+        location: "Remote",
+        description: "Join our fast-growing startup as a full-stack developer. We need someone who can work with React, Node.js, and modern web technologies.",
+        requirements: "JavaScript, React, Node.js, TypeScript, MongoDB",
+        salary: "$90,000 - $130,000",
+        url: "https://example.com/jobs/fullstack-js",
+        jobBoard: "LinkedIn",
+        externalId: "job-002",
+        isActive: true,
+        discoveredAt: new Date()
+      },
+      {
+        id: randomUUID(),
+        title: "DevOps Engineer",
+        company: "CloudTech Solutions",
+        location: "New York, NY",
+        description: "Looking for a DevOps engineer with experience in AWS, Docker, Kubernetes, and CI/CD pipelines.",
+        requirements: "AWS, Docker, Kubernetes, Jenkins, Terraform",
+        salary: "$110,000 - $140,000",
+        url: "https://example.com/jobs/devops",
+        jobBoard: "Indeed",
+        externalId: "job-003",
+        isActive: true,
+        discoveredAt: new Date()
+      }
+    ];
+
+    sampleJobs.forEach(job => {
+      this.jobs.set(job.id, job);
+    });
+
+    // Add sample job search config
+    const userId = "demo-user-id";
+    const configId = randomUUID();
+    const sampleConfig = {
+      id: configId,
+      userId,
+      keywords: ["python", "javascript", "react"],
+      locations: ["San Francisco", "Remote"],
+      jobBoards: ["Indeed", "LinkedIn"],
+      isActive: true,
+      salaryMin: 80000,
+      salaryMax: 150000,
+      experienceLevel: "mid",
+      createdAt: new Date()
+    };
+    this.jobSearchConfigs.set(configId, sampleConfig);
+
+    // Add sample resume
+    const resumeId = randomUUID();
+    const sampleResume = {
+      id: resumeId,
+      content: "John Smith\\nSoftware Engineer\\n\\nExperience:\\n• 5+ years of Python development\\n• React and JavaScript expertise\\n• AWS cloud infrastructure\\n• Full-stack web development\\n\\nSkills: Python, JavaScript, React, Django, AWS, PostgreSQL",
+      name: "John Smith Resume",
+      userId,
+      originalFileName: "john_smith_resume.pdf",
+      filePath: "/uploads/sample_resume.pdf",
+      skills: ["Python", "JavaScript", "React", "Django", "AWS", "PostgreSQL"],
+      experience: { years: 5, level: "senior" },
+      isDefault: true,
+      createdAt: new Date()
+    };
+    this.resumes.set(resumeId, sampleResume);
   }
 
   // User methods
