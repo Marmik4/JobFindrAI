@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(210 25% 7.8431%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(210 25% 7.8431%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(210 25% 7.8431%);
+  --primary: hsl(210 88% 45%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(210 25% 7.8431%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --muted: hsl(210 8% 95%);
+  --muted-foreground: hsl(210 25% 7.8431%);
+  --accent: hsl(210 40% 98%);
+  --accent-foreground: hsl(210 88% 45%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(210 88% 45%);
+  --radius: 0.5rem;
+  --material-blue: hsl(210 88% 45%);
+  --material-blue-light: hsl(210 88% 65%);
+  --material-green: hsl(122 39% 49%);
+  --material-orange: hsl(14 100% 57%);
+  --material-gray: hsl(0 0% 46%);
+  --surface: hsl(210 8% 98%);
+}
+
+.dark {
+  --background: hsl(222 84% 5%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222 84% 5%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222 84% 5%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(210 88% 55%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(217 33% 17%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(217 33% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(217 33% 17%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 62% 30%);
+  --destructive-foreground: hsl(210 40% 98%);
+  --border: hsl(217 33% 17%);
+  --input: hsl(217 33% 17%);
+  --ring: hsl(212 92% 60%);
+  --material-blue: hsl(210 88% 55%);
+  --material-blue-light: hsl(210 88% 75%);
+  --material-green: hsl(122 39% 59%);
+  --material-orange: hsl(14 100% 67%);
+  --material-gray: hsl(0 0% 56%);
+  --surface: hsl(222 84% 8%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-surface text-foreground font-sans antialiased;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  }
+}
+
+@layer components {
+  .material-shadow {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+  }
+
+  .material-shadow-lg {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 16px 32px rgba(0,0,0,0.12);
+  }
+
+  .material-icon {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+  }
+}

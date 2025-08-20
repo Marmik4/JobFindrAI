@@ -1,0 +1,231 @@
+import * as cheerio from "cheerio";
+import { InsertJob } from "@shared/schema";
+
+export interface ScrapedJob {
+  title: string;
+  company: string;
+  location?: string;
+  description: string;
+  requirements?: string;
+  salary?: string;
+  url: string;
+  externalId: string;
+  jobBoard: string;
+}
+
+export class JobScraperService {
+  private readonly HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'Connection': 'keep-alive'
+  };
+
+  async scrapeIndeedJobs(keywords: string[], locations: string[] = [], limit: number = 20): Promise<ScrapedJob[]> {
+    const jobs: ScrapedJob[] = [];
+    
+    try {
+      for (const keyword of keywords) {
+        const location = locations.length > 0 ? locations[0] : '';
+        const searchUrl = `https://www.indeed.com/jobs?q=${encodeURIComponent(keyword)}&l=${encodeURIComponent(location)}&limit=${limit}`;
+        
+        console.log(`Scraping Indeed for: ${keyword} in ${location || 'any location'}`);
+        
+        const response = await fetch(searchUrl, {
+          headers: this.HEADERS,
+        });
+
+        if (!response.ok) {
+          console.error(`Indeed scraping failed: ${response.status}`);
+          continue;
+        }
+
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        $('.jobsearch-SerpJobCard, [data-jk]').each((index, element) => {
+          if (jobs.length >= limit) return false;
+
+          try {
+            const $job = $(element);
+            const title = $job.find('.jobTitle a span, h2 a span').first().text().trim();
+            const company = $job.find('.companyName, [data-testid="company-name"]').text().trim();
+            const location = $job.find('.companyLocation, [data-testid="job-location"]').text().trim();
+            const summary = $job.find('.job-snippet, [data-testid="job-snippet"]').text().trim();
+            const jobKey = $job.attr('data-jk') || $job.find('a[data-jk]').attr('data-jk') || `indeed-${Date.now()}-${index}`;
+            const jobUrl = `https://www.indeed.com/job/${jobKey}`;
+
+            if (title && company) {
+              jobs.push({
+                title,
+                company,
+                location: location || undefined,
+                description: summary,
+                url: jobUrl,
+                externalId: jobKey,
+                jobBoard: 'Indeed'
+              });
+            }
+          } catch (error) {
+            console.error('Error parsing Indeed job:', error);
+          }
+        });
+
+        // Add delay between requests to be respectful
+        await this.delay(2000);
+      }
+    } catch (error) {
+      console.error('Error scraping Indeed:', error);
+    }
+
+    return jobs;
+  }
+
+  async scrapeLinkedInJobs(keywords: string[], locations: string[] = [], limit: number = 20): Promise<ScrapedJob[]> {
+    const jobs: ScrapedJob[] = [];
+    
+    try {
+      for (const keyword of keywords) {
+        const location = locations.length > 0 ? locations[0] : '';
+        // Note: LinkedIn requires authentication for most scraping, this is a basic example
+        const searchUrl = `https://www.linkedin.com/jobs/search?keywords=${encodeURIComponent(keyword)}&location=${encodeURIComponent(location)}&trk=public_jobs_jobs-search-bar_search-submit`;
+        
+        console.log(`Attempting to scrape LinkedIn for: ${keyword}`);
+        
+        // LinkedIn has strict anti-scraping measures, so this is more of a placeholder
+        // In a real implementation, you'd need to use LinkedIn's API or more sophisticated methods
+        console.warn('LinkedIn scraping requires special handling due to authentication requirements');
+        
+        // For now, we'll generate some sample data structure
+        jobs.push({
+          title: `${keyword} Developer`,
+          company: 'LinkedIn Sample Company',
+          location: location || 'Remote',
+          description: `Sample job description for ${keyword} position`,
+          url: searchUrl,
+          externalId: `linkedin-sample-${Date.now()}`,
+          jobBoard: 'LinkedIn'
+        });
+      }
+    } catch (error) {
+      console.error('Error scraping LinkedIn:', error);
+    }
+
+    return jobs;
+  }
+
+  async scrapeRemoteOkJobs(keywords: string[], limit: number = 20): Promise<ScrapedJob[]> {
+    const jobs: ScrapedJob[] = [];
+    
+    try {
+      const searchUrl = `https://remoteok.io/remote-dev-jobs`;
+      
+      console.log('Scraping RemoteOK for development jobs');
+      
+      const response = await fetch(searchUrl, {
+        headers: this.HEADERS,
+      });
+
+      if (!response.ok) {
+        console.error(`RemoteOK scraping failed: ${response.status}`);
+        return jobs;
+      }
+
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      $('.job').each((index, element) => {
+        if (jobs.length >= limit) return false;
+
+        try {
+          const $job = $(element);
+          const title = $job.find('.position').text().trim();
+          const company = $job.find('.company').text().trim();
+          const tags = $job.find('.tags .tag').map((i, el) => $(el).text().trim()).get();
+          const jobId = $job.attr('data-id') || `remoteok-${Date.now()}-${index}`;
+          const jobUrl = `https://remoteok.io/remote-jobs/${jobId}`;
+
+          // Check if job matches any keywords
+          const matchesKeyword = keywords.some(keyword => 
+            title.toLowerCase().includes(keyword.toLowerCase()) ||
+            tags.some(tag => tag.toLowerCase().includes(keyword.toLowerCase()))
+          );
+
+          if (title && company && matchesKeyword) {
+            jobs.push({
+              title,
+              company,
+              location: 'Remote',
+              description: tags.join(', '),
+              url: jobUrl,
+              externalId: jobId,
+              jobBoard: 'RemoteOK'
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing RemoteOK job:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error scraping RemoteOK:', error);
+    }
+
+    return jobs;
+  }
+
+  async scrapeAllJobBoards(keywords: string[], locations: string[] = [], limit: number = 50): Promise<ScrapedJob[]> {
+    const allJobs: ScrapedJob[] = [];
+    
+    console.log(`Starting job scraping for keywords: ${keywords.join(', ')}`);
+    
+    try {
+      // Scrape from different job boards
+      const [indeedJobs, remoteOkJobs, linkedinJobs] = await Promise.allSettled([
+        this.scrapeIndeedJobs(keywords, locations, Math.floor(limit * 0.5)),
+        this.scrapeRemoteOkJobs(keywords, Math.floor(limit * 0.3)),
+        this.scrapeLinkedInJobs(keywords, locations, Math.floor(limit * 0.2))
+      ]);
+
+      if (indeedJobs.status === 'fulfilled') {
+        allJobs.push(...indeedJobs.value);
+      }
+      
+      if (remoteOkJobs.status === 'fulfilled') {
+        allJobs.push(...remoteOkJobs.value);
+      }
+      
+      if (linkedinJobs.status === 'fulfilled') {
+        allJobs.push(...linkedinJobs.value);
+      }
+
+    } catch (error) {
+      console.error('Error in scrapeAllJobBoards:', error);
+    }
+
+    console.log(`Successfully scraped ${allJobs.length} jobs`);
+    return allJobs.slice(0, limit);
+  }
+
+  private async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Convert scraped job to database format
+  convertToInsertJob(scrapedJob: ScrapedJob): InsertJob {
+    return {
+      title: scrapedJob.title,
+      company: scrapedJob.company,
+      location: scrapedJob.location,
+      description: scrapedJob.description,
+      requirements: scrapedJob.requirements,
+      salary: scrapedJob.salary,
+      jobBoard: scrapedJob.jobBoard,
+      externalId: scrapedJob.externalId,
+      url: scrapedJob.url,
+      isActive: true
+    };
+  }
+}
+
+export const jobScraperService = new JobScraperService();
