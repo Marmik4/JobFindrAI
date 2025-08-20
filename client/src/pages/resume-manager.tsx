@@ -79,8 +79,22 @@ export default function ResumeManager() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (resumeId: string) => 
-      apiRequest(`/api/resumes/${resumeId}`, 'DELETE'),
+    mutationFn: async (resumeId: string) => {
+      const response = await fetch(`/api/resumes/${resumeId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Delete failed');
+      }
+
+      return response.json();
+    },
     onSuccess: () => {
       toast({
         title: "Resume Deleted",
