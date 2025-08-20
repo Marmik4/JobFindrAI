@@ -12,6 +12,7 @@ import Applications from "@/pages/applications";
 import Automation from "@/pages/automation";
 import Analytics from "@/pages/analytics";
 import Configuration from "@/pages/configuration";
+import AIInsights from "@/pages/ai-insights";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/automation" component={Automation} />
       <Route path="/analytics" component={Analytics} />
       <Route path="/configuration" component={Configuration} />
+      <Route path="/ai-insights" component={AIInsights} />
       <Route component={NotFound} />
     </Switch>
   );

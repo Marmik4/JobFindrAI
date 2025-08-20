@@ -5,6 +5,9 @@ import { OpenAIService } from "./services/openai";
 import { jobScraperService } from "./services/jobScraper";
 import { browserAutomationService, type ApplicationFormData } from "./services/browserAutomation";
 import { scheduledJobSearchService } from "./services/scheduledJobSearch";
+import { aiJobMatcherService } from "./services/aiJobMatcher";
+import { intelligentApplicationService } from "./services/intelligentApplications";
+import { adaptiveLearningService } from "./services/adaptiveLearning";
 import { insertJobSearchConfigSchema, insertResumeSchema, insertJobApplicationSchema, insertSystemConfigSchema } from "@shared/schema";
 import multer, { type FileFilterCallback } from "multer";
 import type { Request } from "express";
@@ -526,6 +529,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error toggling automation:", error);
       res.status(500).json({ error: "Failed to toggle automation" });
+    }
+  });
+
+  // Advanced AI Features - Job Matching
+  app.get("/api/ai/job-matches", async (req, res) => {
+    try {
+      const userId = "demo-user-id";
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const matches = await aiJobMatcherService.findBestMatches(userId, limit);
+      res.json(matches);
+    } catch (error) {
+      console.error("Error finding job matches:", error);
+      res.status(500).json({ error: "Failed to find job matches" });
+    }
+  });
+
+  // Analyze specific job match
+  app.post("/api/ai/analyze-job/:jobId", async (req, res) => {
+    try {
+      const { jobId } = req.params;
+      const userId = "demo-user-id";
+      
+      const job = await storage.getJob(jobId);
+      const resumes = await storage.getResumes(userId);
+      
+      if (!job || !resumes.length) {
+        return res.status(404).json({ error: "Job or resume not found" });
+      }
+
+      const defaultResume = resumes.find(r => r.isDefault) || resumes[0];
+      const match = await aiJobMatcherService.analyzeJobMatch(job, defaultResume);
+      
+      res.json(match);
+    } catch (error) {
+      console.error("Error analyzing job:", error);
+      res.status(500).json({ error: "Failed to analyze job" });
+    }
+  });
+
+  // Intelligent Applications
+  app.post("/api/ai/auto-apply/:jobId", async (req, res) => {
+    try {
+      const { jobId } = req.params;
+      const userId = "demo-user-id";
+      
+      const job = await storage.getJob(jobId);
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      const result = await intelligentApplicationService.attemptAutoApplication(job, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error auto-applying to job:", error);
+      res.status(500).json({ error: "Failed to auto-apply to job" });
+    }
+  });
+
+  // Adaptive Learning
+  app.get("/api/ai/learning-insights", async (req, res) => {
+    try {
+      const userId = "demo-user-id";
+      const insights = await adaptiveLearningService.generateLearningInsights(userId);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating learning insights:", error);
+      res.status(500).json({ error: "Failed to generate learning insights" });
+    }
+  });
+
+  app.get("/api/ai/application-patterns", async (req, res) => {
+    try {
+      const userId = "demo-user-id";
+      const patterns = await adaptiveLearningService.analyzeApplicationPatterns(userId);
+      res.json(patterns);
+    } catch (error) {
+      console.error("Error analyzing application patterns:", error);
+      res.status(500).json({ error: "Failed to analyze application patterns" });
     }
   });
 

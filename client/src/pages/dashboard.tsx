@@ -19,21 +19,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 overflow-auto">
-        <Topbar 
-          title="Dashboard"
-          subtitle="Monitor your automated job applications"
-          showManualScan={true}
-          showAutomationToggle={true}
-        />
-        
-        <main className="p-6">
+      
+      {/* Main content with responsive padding */}
+      <div className="md:ml-80 min-h-screen">
+        <div className="pt-16 md:pt-6 px-4 md:px-6 pb-6">
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Monitor your automated job applications</p>
+          </div>
+          
           <StatsCards />
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <RecentApplications />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="lg:col-span-2">
+              <RecentApplications />
+            </div>
             
             <div className="space-y-6">
               <QuickActions />
@@ -41,8 +43,10 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <RecentActivity />
-        </main>
+          <div className="mt-6">
+            <RecentActivity />
+          </div>
+        </div>
       </div>
       
       {/* Floating Action Button */}

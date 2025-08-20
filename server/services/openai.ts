@@ -88,6 +88,27 @@ export class OpenAIService {
     }
   }
 
+  static async generateText(prompt: string, options?: { responseFormat?: string }): Promise<string> {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: options?.responseFormat === "json_object" ? { type: "json_object" } : undefined,
+        temperature: 0.7
+      });
+
+      return response.choices[0].message.content || "";
+    } catch (error) {
+      console.error("Error generating text:", error);
+      throw new Error("Failed to generate text: " + (error as Error).message);
+    }
+  }
+
   static async extractResumeSkills(resumeContent: string): Promise<string[]> {
     try {
       const response = await openai.chat.completions.create({

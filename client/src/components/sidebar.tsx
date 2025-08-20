@@ -1,102 +1,173 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-
-const navigation = [
-  { name: "Dashboard", href: "/", icon: "dashboard" },
-  { name: "Job Search", href: "/job-search", icon: "work" },
-  { name: "Resume Manager", href: "/resume-manager", icon: "description" },
-  { name: "Cover Letters", href: "/cover-letters", icon: "mail" },
-  { name: "Applications", href: "/applications", icon: "track_changes" },
-  { name: "Automation", href: "/automation", icon: "smart_button" },
-  { name: "Analytics", href: "/analytics", icon: "analytics" },
-];
-
-const settings = [
-  { name: "Configuration", href: "/configuration", icon: "settings" },
-  { name: "API Keys", href: "/configuration#api-keys", icon: "security" },
-];
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { 
+  BarChart3, 
+  BrainCircuit, 
+  FileText, 
+  Home, 
+  Mail, 
+  Menu, 
+  Search, 
+  Settings, 
+  Target, 
+  Upload,
+  Bot,
+  TrendingUp,
+  Brain
+} from "lucide-react";
+import { useState } from "react";
 
 interface SidebarProps {
   className?: string;
 }
 
-export default function Sidebar({ className }: SidebarProps) {
+const navItems = [
+  {
+    title: "Dashboard",
+    href: "/",
+    icon: Home,
+    description: "Overview and statistics"
+  },
+  {
+    title: "Job Search",
+    href: "/job-search",
+    icon: Search,
+    description: "Find and browse jobs"
+  },
+  {
+    title: "AI Insights",
+    href: "/ai-insights",
+    icon: Brain,
+    description: "AI-powered recommendations",
+    badge: "New"
+  },
+  {
+    title: "Applications",
+    href: "/applications",
+    icon: Target,
+    description: "Track your applications"
+  },
+  {
+    title: "Resume Manager",
+    href: "/resume-manager",
+    icon: Upload,
+    description: "Manage your resumes"
+  },
+  {
+    title: "Cover Letters",
+    href: "/cover-letters",
+    icon: Mail,
+    description: "Generate cover letters"
+  },
+  {
+    title: "Automation",
+    href: "/automation",
+    icon: Bot,
+    description: "Automation controls"
+  },
+  {
+    title: "Analytics",
+    href: "/analytics",
+    icon: TrendingUp,
+    description: "Performance analytics"
+  },
+  {
+    title: "Configuration",
+    href: "/configuration",
+    icon: Settings,
+    description: "System settings"
+  }
+];
+
+function SidebarContent({ className }: SidebarProps) {
   const [location] = useLocation();
 
   return (
-    <div className={cn("w-64 bg-white shadow-material flex-shrink-0", className)}>
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-material-blue rounded-lg flex items-center justify-center">
-            <span className="material-icon text-white text-xl" data-testid="logo-icon">smart_toy</span>
+    <div className={cn("pb-12", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <div className="flex items-center gap-2 mb-6">
+            <BrainCircuit className="h-8 w-8 text-primary" />
+            <div>
+              <h2 className="text-lg font-semibold">JobBot AI</h2>
+              <p className="text-xs text-muted-foreground">Automated Job Search</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-medium text-gray-900">JobBot AI</h1>
-            <p className="text-sm text-material-gray">Automation Assistant</p>
-          </div>
-        </div>
-      </div>
-      
-      <nav className="mt-6">
-        <div className="px-3">
-          {navigation.map((item) => {
-            const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-            return (
-              <Link key={item.name} href={item.href}>
-                <a
-                  className={cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-lg mb-1 transition-colors",
-                    isActive
-                      ? "text-white bg-material-blue"
-                      : "text-material-gray hover:text-gray-900 hover:bg-gray-100"
-                  )}
-                  data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-                >
-                  <span className="material-icon mr-3 text-lg">{item.icon}</span>
-                  {item.name}
-                </a>
-              </Link>
-            );
-          })}
-        </div>
-        
-        <div className="mt-8 px-3">
-          <h3 className="px-3 text-xs font-semibold text-material-gray uppercase tracking-wider">Settings</h3>
-          <div className="mt-2">
-            {settings.map((item) => {
-              const isActive = location === item.href || location.startsWith(item.href.split('#')[0]);
+          <div className="space-y-1">
+            {navItems.map((item, index) => {
+              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+              
               return (
-                <Link key={item.name} href={item.href}>
-                  <a
+                <Link key={index} href={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
                     className={cn(
-                      "flex items-center px-3 py-2 text-sm font-medium rounded-lg mb-1 transition-colors",
-                      isActive
-                        ? "text-white bg-material-blue"
-                        : "text-material-gray hover:text-gray-900 hover:bg-gray-100"
+                      "w-full justify-start gap-3 h-auto p-3",
+                      isActive && "bg-secondary"
                     )}
-                    data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
                   >
-                    <span className="material-icon mr-3 text-lg">{item.icon}</span>
-                    {item.name}
-                  </a>
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{item.title}</span>
+                        {item.badge && (
+                          <span className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {item.description}
+                      </p>
+                    </div>
+                  </Button>
                 </Link>
               );
             })}
           </div>
         </div>
-      </nav>
-      
-      <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200 bg-white">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-material-green rounded-full flex items-center justify-center">
-            <span className="material-icon text-white text-sm">check</span>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900" data-testid="status-text">Active</p>
-            <p className="text-xs text-material-gray" data-testid="last-run-text">Last run: 2 min ago</p>
-          </div>
-        </div>
       </div>
     </div>
+  );
+}
+
+export default function Sidebar() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile Sidebar */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0 md:hidden fixed top-4 left-4 z-50"
+            data-testid="mobile-menu-toggle"
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle navigation menu</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-80">
+          <ScrollArea className="h-full">
+            <SidebarContent />
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <div className="fixed inset-y-0 left-0 z-50 w-80 border-r bg-background">
+          <ScrollArea className="h-full">
+            <SidebarContent />
+          </ScrollArea>
+        </div>
+      </div>
+    </>
   );
 }
