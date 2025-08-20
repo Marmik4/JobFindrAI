@@ -78,7 +78,7 @@ export default function ResumeManager() {
 
   const deleteMutation = useMutation({
     mutationFn: (resumeId: string) => 
-      apiRequest("DELETE", `/api/resumes/${resumeId}`),
+      apiRequest(`/api/resumes/${resumeId}`, 'DELETE'),
     onSuccess: () => {
       toast({
         title: "Resume Deleted",
@@ -132,6 +132,44 @@ export default function ResumeManager() {
       day: 'numeric',
     });
   };
+
+  const downloadResume = (resume: Resume) => {
+    // Create download link
+    const downloadUrl = `/api/resumes/${resume.id}/download`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = resume.originalFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Download Started",
+      description: `Downloading ${resume.originalFileName}`,
+    });
+  };
+
+  const optimizeResume = useMutation({
+    mutationFn: (resumeId: string) => 
+      fetch(`/api/resumes/${resumeId}/optimize`, { 
+        credentials: 'include' 
+      }).then(res => res.json()),
+    onSuccess: (data) => {
+      toast({
+        title: "Resume Analysis Complete",
+        description: `Found ${data.suggestions?.length || 0} optimization suggestions`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to analyze resume for optimization.",
+        variant: "destructive",
+      });
+    },
+  });
+
+
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -339,6 +377,7 @@ export default function ResumeManager() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                onClick={() => downloadResume(resume)}
                                 data-testid={`download-resume-${resume.id}`}
                               >
                                 <span className="material-icon text-sm mr-2">download</span>
@@ -349,10 +388,14 @@ export default function ResumeManager() {
                                 variant="outline"
                                 size="sm"
                                 className="text-material-blue border-material-blue hover:bg-blue-50"
+                                onClick={() => optimizeResume.mutate(resume.id)}
+                                disabled={optimizeResume.isPending}
                                 data-testid={`optimize-resume-${resume.id}`}
                               >
-                                <span className="material-icon text-sm mr-2">auto_awesome</span>
-                                Optimize
+                                <span className="material-icon text-sm mr-2">
+                                  {optimizeResume.isPending ? "sync" : "auto_awesome"}
+                                </span>
+                                {optimizeResume.isPending ? "Analyzing..." : "Optimize"}
                               </Button>
 
                               <AlertDialog>

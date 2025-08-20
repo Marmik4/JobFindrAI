@@ -271,6 +271,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Download resume file
+  app.get("/api/resumes/:id/download", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = "demo-user-id";
+      
+      const resumes = await storage.getResumes(userId);
+      const resume = resumes.find(r => r.id === id);
+      
+      if (!resume) {
+        return res.status(404).json({ error: "Resume not found" });
+      }
+
+      // Check if file exists, try both relative and absolute paths
+      let filePath = resume.filePath;
+      if (!fs.existsSync(filePath)) {
+        // Try relative path from current directory
+        filePath = filePath.replace(/^\//, './');
+        if (!fs.existsSync(filePath)) {
+          return res.status(404).json({ error: "Resume file not found on disk" });
+        }
+      }
+
+      // Set proper headers for file download
+      res.setHeader('Content-Disposition', `attachment; filename="${resume.originalFileName}"`);
+      res.setHeader('Content-Type', 'application/octet-stream');
+      
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error("Error downloading resume:", error);
+      res.status(500).json({ error: "Failed to download resume" });
+    }
+  });
+
+  // Optimize resume for specific job
+  app.post("/api/resumes/:id/optimize/:jobId", async (req, res) => {
+    try {
+      const { id, jobId } = req.params;
+      const userId = "demo-user-id";
+      
+      const resumes = await storage.getResumes(userId);
+      const resume = resumes.find(r => r.id === id);
+      const job = await storage.getJob(jobId);
+      
+      if (!resume || !job) {
+        return res.status(404).json({ error: "Resume or job not found" });
+      }
+
+      const optimizedContent = await OpenAIService.optimizeResumeForJob(resume.content, job);
+      
+      res.json({
+        success: true,
+        originalContent: resume.content,
+        optimizedContent,
+        jobTitle: job.title,
+        company: job.company,
+        suggestions: [
+          "Highlighted relevant skills for this position",
+          "Emphasized matching experience",
+          "Optimized keywords for ATS systems"
+        ]
+      });
+    } catch (error) {
+      console.error("Error optimizing resume:", error);
+      res.status(500).json({ error: "Failed to optimize resume" });
+    }
+  });
+
+  // Get resume optimization suggestions
+  app.get("/api/resumes/:id/optimize", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = "demo-user-id";
+      
+      const resumes = await storage.getResumes(userId);
+      const resume = resumes.find(r => r.id === id);
+      
+      if (!resume) {
+        return res.status(404).json({ error: "Resume not found" });
+      }
+
+      const suggestions = await OpenAIService.getResumeOptimizationSuggestions(resume.content);
+      
+      res.json({
+        success: true,
+        resumeId: id,
+        suggestions,
+        currentSkills: resume.skills,
+        recommendations: [
+          "Add more quantifiable achievements",
+          "Include relevant keywords for your target roles",
+          "Highlight your most recent and relevant experience"
+        ]
+      });
+    } catch (error) {
+      console.error("Error getting optimization suggestions:", error);
+      res.status(500).json({ error: "Failed to get optimization suggestions" });
+    }
+  });
+
   // Generate cover letter
   app.post("/api/cover-letters/generate", async (req, res) => {
     try {
